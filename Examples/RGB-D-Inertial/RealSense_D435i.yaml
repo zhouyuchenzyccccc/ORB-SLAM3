@@ -56,6 +56,9 @@ IMU.GyroWalk: 1e-6 # rad/s^1.5
 IMU.AccWalk: 1e-4 # m/s^2.5
 IMU.Frequency: 200.0
 
+# Fast initialization relaxes the acceleration excitation check.
+IMU.fastInit: 1
+
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------

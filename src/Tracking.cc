@@ -30,6 +30,7 @@
 #include "GeometricTools.h"
 
 #include <iostream>
+#include <cstdlib>
 
 #include <mutex>
 #include <chrono>
@@ -612,6 +613,17 @@ void Tracking::newParameterLoader(Settings *settings) {
 
     const float sf = sqrt(mImuFreq);
     mpImuCalib = new IMU::Calib(Tbc,Ng*sf,Na*sf,Ngw/sf,Naw/sf);
+
+    // New Settings path did not expose IMU.fastInit; allow explicit runtime control.
+    // Default to fast init for offline RGB-D inertial logs where acceleration excitation is mild.
+    mFastInit = true;
+    const char* fast_init_env = std::getenv("ORB3_IMU_FAST_INIT");
+    if(fast_init_env)
+    {
+        mFastInit = std::string(fast_init_env) != "0";
+    }
+    if(mFastInit)
+        cout << "Fast IMU initialization. Acceleration is not checked" << endl;
 
     mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
 }

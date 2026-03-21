@@ -163,6 +163,10 @@ endif()
 # RGB-D inertial examples
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/RGB-D-Inertial)
 
+add_executable(rgbd_inertial_local_dataset
+        Examples/RGB-D-Inertial/rgbd_inertial_local_dataset.cc)
+target_link_libraries(rgbd_inertial_local_dataset ${PROJECT_NAME})
+
 if(realsense2_FOUND)
     add_executable(rgbd_inertial_realsense_D435i
             Examples/RGB-D-Inertial/rgbd_inertial_realsense_D435i.cc)
