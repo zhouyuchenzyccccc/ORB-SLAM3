@@ -246,7 +246,7 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
 
-        SLAM.TrackRGBD(imRGB, imD, fr.ts, fr.frame_index);
+        SLAM.TrackRGBD(imRGB, imD, fr.ts);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
