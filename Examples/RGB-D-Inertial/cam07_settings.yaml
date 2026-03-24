@@ -1,0 +1,102 @@
+%YAML:1.0
+
+# Camera calibration parameters for ORB-SLAM3 RGB-D+IMU
+# Device: 07 / CPCBC53000M1
+# RGB intrinsics and distortion are from provided factory calibration.
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters
+#--------------------------------------------------------------------------------------------
+
+Camera.type: "PinHole"
+
+# Camera resolution (RGB stream used by ORB-SLAM3 tracking)
+Camera.width: 848
+Camera.height: 480
+
+# RGB intrinsics
+Camera.fx: 404.17474365234375
+Camera.fy: 403.96884155273438
+Camera.cx: 426.55038452148438
+Camera.cy: 243.14649963378906
+
+# RGB distortion (OpenCV 5-parameter model)
+Camera.k1: -0.028495494276285172
+Camera.k2: 0.0354449786245823
+Camera.p1: 0.00015595817239955068
+Camera.p2: 0.00083192193415015936
+Camera.k3: -0.013101869262754917
+
+Camera.distortionModel: "opencv"
+
+# Camera frames per second
+Camera.fps: 30
+
+# Color order of input images (0: BGR, 1: RGB)
+# Keep 0 to match current pipeline logs.
+Camera.RGB: 0
+
+# Effective baseline*fx used by ORB-SLAM3 depth thresholding logic.
+# Avoid 0, otherwise close/far depth threshold becomes 0.
+Camera.bf: 40.0
+
+#--------------------------------------------------------------------------------------------
+# Depth Parameters (RGB-D)
+#--------------------------------------------------------------------------------------------
+
+# For depth in millimeters: meters = depth / 1000
+DepthMapFactor: 1000.0
+RGBD.DepthMapFactor: 1000.0
+
+# Keep both keys for compatibility with different ORB-SLAM3 loaders.
+ThDepth: 40.0
+Stereo.ThDepth: 40.0
+
+#--------------------------------------------------------------------------------------------
+# IMU Parameters (for RGB-D-Inertial mode)
+#--------------------------------------------------------------------------------------------
+
+# Left camera to IMU transform (Tbc)
+Tbc: !!opencv-matrix
+    rows: 4
+    cols: 4
+    dt: f
+    data: [0.999994, -0.003217, 0.001247, 0.015904,
+           0.003218, 0.999994, -0.000884, -0.001091,
+           -0.001244, 0.000888, 0.999999, 0.013820,
+           0.000000, 0.000000, 0.000000, 1.000000]
+
+IMU.Frequency: 200
+IMU.NoiseGyro: 1.7e-4
+IMU.NoiseAcc: 2.0e-3
+IMU.GyroWalk: 1.9393e-05
+IMU.AccWalk: 3.0e-03
+
+# Enable relaxed IMU init gate when supported by loader.
+IMU.fastInit: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+Viewer.fps: 30

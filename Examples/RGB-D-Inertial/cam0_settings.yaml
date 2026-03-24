@@ -1,0 +1,107 @@
+%YAML:1.0
+
+# Camera calibration parameters for ORB-SLAM3 RGB-D+IMU
+# Device: cam0
+# Calibration results from user provided data
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters
+#--------------------------------------------------------------------------------------------
+
+Camera.type: "PinHole"
+
+# Camera resolution
+Camera.width: 1280
+Camera.height: 720
+
+# RGB intrinsics
+Camera.fx: 614.7821478692196
+Camera.fy: 615.5067251236821
+Camera.cx: 648.1331522806648
+Camera.cy: 370.88851103765234
+
+# RGB distortion (radtan model)
+Camera.k1: -0.008872026035063808
+Camera.k2: 0.01187169725415302
+Camera.p1: 0.0048918616345150386
+Camera.p2: 0.002016265846987476
+Camera.k3: 0.0
+
+Camera.distortionModel: "opencv"
+
+# Camera frames per second
+Camera.fps: 30
+
+# Color order of input images (0: BGR, 1: RGB)
+Camera.RGB: 0
+
+# Effective baseline*fx used by ORB-SLAM3 depth thresholding logic.
+Camera.bf: 40.0
+
+#--------------------------------------------------------------------------------------------
+# Depth Parameters (RGB-D)
+#--------------------------------------------------------------------------------------------
+
+# For depth in millimeters: meters = depth / 1000
+DepthMapFactor: 1000.0
+RGBD.DepthMapFactor: 1000.0
+
+# Keep both keys for compatibility with different ORB-SLAM3 loaders.
+ThDepth: 40.0
+Stereo.ThDepth: 40.0
+
+#--------------------------------------------------------------------------------------------
+# IMU Parameters (for RGB-D-Inertial mode)
+#--------------------------------------------------------------------------------------------
+
+# Camera to IMU transform (Tbc)
+# Kalibr gives T_cam_imu (IMU->camera). ORB-SLAM3 expects Tbc (camera->IMU),
+# so this matrix is the inverse of T_cam_imu.
+Tbc: !!opencv-matrix
+    rows: 4
+    cols: 4
+    dt: f
+    data: [0.9998637767091308, -0.0034556220711838828, 0.016139600399442806, 0.0193989486191827,
+           0.0034729052835591875, 0.9999934255676194, -0.001042952745157334, 0.000586638176353366,
+           -0.01613589024020597, 0.0010988619742039272, 0.9998692042204904, 0.00984529358347054,
+           0.0, 0.0, 0.0, 1.0]
+
+IMU.Frequency: 200
+IMU.NoiseGyro: 4.8561387195171702e-4
+IMU.NoiseAcc: 7.3157373092684816e-3
+IMU.GyroWalk: 1.4837304015073019e-5
+IMU.AccWalk: 1.2349892993116245e-4
+
+# Time offset between camera and IMU from Kalibr
+# Apply at runtime with env var ORB3_IMU_TIMESHIFT (seconds):
+# corrected_imu_ts = raw_imu_ts + ORB3_IMU_TIMESHIFT
+# Typical first try for this dataset: ORB3_IMU_TIMESHIFT=-0.002870777951001288
+
+# Enable relaxed IMU init gate when supported by loader.
+IMU.fastInit: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
+Viewer.fps: 30

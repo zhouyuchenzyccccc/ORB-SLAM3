@@ -171,7 +171,7 @@ static bool LoadFrameCsv(const string &imu_csv_path, const string &seq_path, vec
     return !frames.empty();
 }
 
-static bool LoadImuRawCsv(const string &imu_raw_csv_path, vector<ImuRawRecord> &accel, vector<ImuRawRecord> &gyro)
+static bool LoadImuRawCsv(const string &imu_raw_csv_path, vector<ImuRawRecord> &accel, vector<ImuRawRecord> &gyro, double imu_time_shift_sec)
 {
     ifstream fin(imu_raw_csv_path.c_str());
     if (!fin.is_open())
@@ -197,7 +197,7 @@ static bool LoadImuRawCsv(const string &imu_raw_csv_path, vector<ImuRawRecord> &
             continue;
 
         ImuRawRecord rec;
-        rec.ts = stod(cols[0]) * 1e-6;
+        rec.ts = stod(cols[0]) * 1e-6 + imu_time_shift_sec;
         rec.is_gyro = (cols[1] == "gyro");
         rec.x = stof(cols[2]);
         rec.y = stof(cols[3]);
@@ -241,9 +241,24 @@ int main(int argc, char **argv)
     const char *use_raw_env = getenv("ORB3_USE_IMU_RAW");
     const bool use_raw = (use_raw_env && string(use_raw_env) == "1");
 
+    double imu_time_shift_sec = 0.0;
+    const char *imu_shift_env = getenv("ORB3_IMU_TIMESHIFT");
+    if (imu_shift_env)
+    {
+        try
+        {
+            imu_time_shift_sec = stod(string(imu_shift_env));
+        }
+        catch (...)
+        {
+            cerr << "Warning: invalid ORB3_IMU_TIMESHIFT='" << imu_shift_env << "', fallback to 0" << endl;
+            imu_time_shift_sec = 0.0;
+        }
+    }
+
     vector<ImuRawRecord> accel_raw;
     vector<ImuRawRecord> gyro_raw;
-    const bool has_raw = use_raw && LoadImuRawCsv(imu_raw_csv_path, accel_raw, gyro_raw);
+    const bool has_raw = use_raw && LoadImuRawCsv(imu_raw_csv_path, accel_raw, gyro_raw, imu_time_shift_sec);
 
     cout << "Frames loaded: " << frames.size() << endl;
     if (has_raw)
@@ -252,6 +267,7 @@ int main(int argc, char **argv)
         cout << "imu_raw.csv unavailable or invalid, fallback to frame-synced imu.csv only" << endl;
     else
         cout << "Using frame-synced imu.csv only (set ORB3_USE_IMU_RAW=1 to enable imu_raw densification)" << endl;
+    cout << "IMU raw timestamp shift: " << imu_time_shift_sec << " s" << endl;
 
     string traj_name = "CameraTrajectory.txt";
     string kf_name = "KeyFrameTrajectory.txt";
