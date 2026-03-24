@@ -469,7 +469,8 @@ int main(int argc, char **argv)
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
 
-        SLAM.TrackRGBD(imRGB, imD, fr.ref_ts, vImuMeas, fr.frame_index);
+        double frame_ts = FrameImuTs(fr);
+        SLAM.TrackRGBD(imRGB, imD, frame_ts, vImuMeas, fr.frame_index);
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -482,9 +483,9 @@ int main(int argc, char **argv)
 
         double T = 0.0;
         if (i + 1 < frames.size())
-            T = frames[i + 1].ref_ts - fr.ref_ts;
+            T = FrameImuTs(frames[i + 1]) - FrameImuTs(fr);
         else if (i > 0)
-            T = fr.ref_ts - frames[i - 1].ref_ts;
+            T = FrameImuTs(fr) - FrameImuTs(frames[i - 1]);
         if (ttrack < T)
             usleep((T - ttrack) * 1e6);
 
