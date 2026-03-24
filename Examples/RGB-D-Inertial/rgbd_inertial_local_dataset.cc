@@ -67,6 +67,11 @@ static float LerpFloat(float a, float b, float r)
     return a + (b - a) * r;
 }
 
+static double FrameImuTs(const FrameRecord &fr)
+{
+    return 0.5 * (fr.accel_ts + fr.gyro_ts);
+}
+
 static inline string Trim(const string &s)
 {
     size_t b = 0;
@@ -147,16 +152,23 @@ static bool LoadFrameCsv(const string &imu_csv_path, const string &seq_path, vec
             continue;
 
         FrameRecord rec;
-        rec.frame_index = cols[0];
-        rec.ref_ts = stod(cols[1]) * 1e-6;
-        rec.accel_ts = stod(cols[2]) * 1e-6;
-        rec.ax = stof(cols[3]);
-        rec.ay = stof(cols[4]);
-        rec.az = stof(cols[5]);
-        rec.gyro_ts = stod(cols[6]) * 1e-6;
-        rec.gx = stof(cols[7]);
-        rec.gy = stof(cols[8]);
-        rec.gz = stof(cols[9]);
+        try
+        {
+            rec.frame_index = cols[0];
+            rec.ref_ts = stod(cols[1]) * 1e-6;
+            rec.accel_ts = stod(cols[2]) * 1e-6;
+            rec.ax = stof(cols[3]);
+            rec.ay = stof(cols[4]);
+            rec.az = stof(cols[5]);
+            rec.gyro_ts = stod(cols[6]) * 1e-6;
+            rec.gx = stof(cols[7]);
+            rec.gy = stof(cols[8]);
+            rec.gz = stof(cols[9]);
+        }
+        catch (...)
+        {
+            continue;
+        }
 
         rec.rgb_path = FindImageWithKnownExt(rgb_folder, rec.frame_index, rgb_exts);
         rec.depth_path = FindImageWithKnownExt(depth_folder, rec.frame_index, depth_exts);
@@ -197,16 +209,28 @@ static bool LoadImuRawCsv(const string &imu_raw_csv_path, vector<ImuRawRecord> &
             continue;
 
         ImuRawRecord rec;
-        rec.ts = stod(cols[0]) * 1e-6 + imu_time_shift_sec;
-        rec.is_gyro = (cols[1] == "gyro");
-        rec.x = stof(cols[2]);
-        rec.y = stof(cols[3]);
-        rec.z = stof(cols[4]);
+        try
+        {
+            rec.ts = stod(cols[0]) * 1e-6 + imu_time_shift_sec;
+            rec.x = stof(cols[2]);
+            rec.y = stof(cols[3]);
+            rec.z = stof(cols[4]);
+        }
+        catch (...)
+        {
+            continue;
+        }
 
-        if (rec.is_gyro)
+        if (cols[1] == "gyro")
+        {
+            rec.is_gyro = true;
             gyro.push_back(rec);
-        else
+        }
+        else if (cols[1] == "accel")
+        {
+            rec.is_gyro = false;
             accel.push_back(rec);
+        }
     }
 
     sort(accel.begin(), accel.end(), [](const ImuRawRecord &a, const ImuRawRecord &b)
@@ -287,6 +311,45 @@ int main(int argc, char **argv)
     vector<float> vTimesTrack;
     vTimesTrack.resize(frames.size());
 
+    auto InterpAccelAtTs = [](const vector<ImuRawRecord> &accel_vec, size_t &idx, double ts, float &ax, float &ay, float &az) -> bool
+    {
+        if (accel_vec.empty())
+            return false;
+
+        while (idx + 1 < accel_vec.size() && accel_vec[idx + 1].ts <= ts)
+            ++idx;
+
+        const ImuRawRecord &a0 = accel_vec[idx];
+        if (idx + 1 >= accel_vec.size())
+        {
+            ax = a0.x;
+            ay = a0.y;
+            az = a0.z;
+            return true;
+        }
+
+        const ImuRawRecord &a1 = accel_vec[idx + 1];
+        const double dt = a1.ts - a0.ts;
+        if (dt <= 1e-9)
+        {
+            ax = a0.x;
+            ay = a0.y;
+            az = a0.z;
+            return true;
+        }
+
+        double r = (ts - a0.ts) / dt;
+        if (r < 0.0)
+            r = 0.0;
+        if (r > 1.0)
+            r = 1.0;
+
+        ax = static_cast<float>(a0.x + (a1.x - a0.x) * r);
+        ay = static_cast<float>(a0.y + (a1.y - a0.y) * r);
+        az = static_cast<float>(a0.z + (a1.z - a0.z) * r);
+        return true;
+    };
+
     size_t accel_idx = 0;
     size_t gyro_idx = 0;
 
@@ -315,8 +378,10 @@ int main(int argc, char **argv)
         if (i > 0)
         {
             const FrameRecord &prev = frames[i - 1];
-            const double t_begin = prev.ref_ts + 1e-6;
-            const double t_end = fr.ref_ts - 1e-6;
+            const double prev_imu_ts = FrameImuTs(prev);
+            const double curr_imu_ts = FrameImuTs(fr);
+            const double t_begin = prev_imu_ts + 1e-6;
+            const double t_end = curr_imu_ts - 1e-6;
 
             const int kInterpSamples = 8;
             for (int s = 0; s < kInterpSamples; ++s)
@@ -340,17 +405,18 @@ int main(int argc, char **argv)
         }
         else
         {
-            const double t_begin = fr.ref_ts - 0.005;
-            const double t_end = fr.ref_ts - 1e-6;
+            const double curr_imu_ts = FrameImuTs(fr);
+            const double t_begin = curr_imu_ts - 0.005;
+            const double t_end = curr_imu_ts - 1e-6;
             vImuMeas.push_back(BuildImuPoint(fr.ax, fr.ay, fr.az, fr.gx, fr.gy, fr.gz, t_begin));
             vImuMeas.push_back(BuildImuPoint(fr.ax, fr.ay, fr.az, fr.gx, fr.gy, fr.gz, t_end));
         }
 
-        // Optional densification from imu_raw.csv within (prev_frame_ts, current_frame_ts].
+        // Optional densification from imu_raw.csv within (prev_imu_ts, current_imu_ts].
         if (has_raw && i > 0)
         {
-            const double t_begin = frames[i - 1].ref_ts;
-            const double t_end = fr.ref_ts;
+            const double t_begin = FrameImuTs(frames[i - 1]);
+            const double t_end = FrameImuTs(fr);
 
             while (accel_idx + 1 < accel_raw.size() && accel_raw[accel_idx + 1].ts <= t_begin)
                 ++accel_idx;
@@ -361,17 +427,15 @@ int main(int argc, char **argv)
             while (gyro_idx < gyro_raw.size() && gyro_raw[gyro_idx].ts <= t_end)
             {
                 const ImuRawRecord &g = gyro_raw[gyro_idx];
-                while (accel_idx + 1 < accel_raw.size() && accel_raw[accel_idx + 1].ts <= g.ts)
-                    ++accel_idx;
-
-                const ImuRawRecord &a = accel_raw[accel_idx];
                 double tg = g.ts;
                 if (tg < t_begin + 1e-6)
                     tg = t_begin + 1e-6;
                 if (tg > t_end - 1e-6)
                     tg = t_end - 1e-6;
 
-                vDense.push_back(BuildImuPoint(a.x, a.y, a.z, g.x, g.y, g.z, tg));
+                float ax = 0.f, ay = 0.f, az = 0.f;
+                if (InterpAccelAtTs(accel_raw, accel_idx, tg, ax, ay, az))
+                    vDense.push_back(BuildImuPoint(ax, ay, az, g.x, g.y, g.z, tg));
                 ++gyro_idx;
             }
 
@@ -389,8 +453,8 @@ int main(int argc, char **argv)
 
         if (i > 0)
         {
-            const double tmin = frames[i - 1].ref_ts + 1e-6;
-            const double tmax = fr.ref_ts - 1e-6;
+            const double tmin = FrameImuTs(frames[i - 1]) + 1e-6;
+            const double tmax = FrameImuTs(fr) - 1e-6;
             if (vImuMeas.front().t < tmin)
                 vImuMeas.front().t = tmin;
             if (vImuMeas.back().t > tmax)
