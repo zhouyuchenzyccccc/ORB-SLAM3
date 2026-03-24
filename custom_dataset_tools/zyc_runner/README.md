@@ -28,7 +28,7 @@
 在 Ubuntu 终端执行：
 
 ```bash
-cd /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner
+cd /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner
 python3 prepare_zyc_dataset.py \
   --data-root /home/ubuntu/WorkSpace/ZYC/dataset/imu_joint_calibration/test1/1/07 \
   --sequence-name test1_1_07
@@ -36,7 +36,7 @@ python3 prepare_zyc_dataset.py \
 
 完成后会生成：
 
-`/home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07`
+`/home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07`
 
 结构如下：
 
@@ -48,31 +48,31 @@ python3 prepare_zyc_dataset.py \
 ## 4. 运行 RGB 模式
 
 ```bash
-cd /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3
+cd /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3
 bash custom_dataset_tools/zyc_runner/run_rgb.sh \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3 \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/Examples/Monocular/RealSense_D435i.yaml \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3 \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/Examples/Monocular/RealSense_D435i.yaml \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07
 ```
 
 ## 5. 运行 RGB-D 模式
 
 ```bash
-cd /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3
+cd /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3
 bash custom_dataset_tools/zyc_runner/run_rgbd.sh \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3 \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/Examples/RGB-D/RealSense_D435i.yaml \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3 \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/Examples/RGB-D/RealSense_D435i.yaml \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07
 ```
 
 ## 6. 运行 IMU（视觉-IMU）模式
 
 ```bash
-cd /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3
+cd /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3
 bash custom_dataset_tools/zyc_runner/run_imu.sh \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3 \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/Examples/Monocular-Inertial/RealSense_D435i.yaml \
-  /home/ubuntu/WorkSpace/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07 \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3 \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/Examples/Monocular-Inertial/RealSense_D435i.yaml \
+  /home/ubuntu/WorkSpace/ZYC/cam_pose/ORB-SLAM3/custom_dataset_tools/zyc_runner/output/test1_1_07 \
   test1_1_07
 ```
 
