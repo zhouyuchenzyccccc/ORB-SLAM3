@@ -92,6 +92,51 @@ def load_imu_raw_pairs(imu_raw_csv: Path) -> List[ImuPair]:
     return completed
 
 
+def load_imu_raw_pairs_with_filters(
+    imu_raw_csv: Path, time_offset_us: int = 0, skip_before_us: int = 0
+) -> List[ImuPair]:
+    """Load IMU raw pairs with optional time offset and skip-before filtering.
+    
+    Args:
+        imu_raw_csv: Path to imu_raw.csv
+        time_offset_us: Global offset to add to all IMU timestamps (in microseconds)
+        skip_before_us: Skip all IMU samples with ts_us < skip_before_us (in microseconds)
+    """
+    pairs: Dict[int, ImuPair] = {}
+    with imu_raw_csv.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        required = {"ts_us", "sensor", "x", "y", "z"}
+        if not required.issubset(set(reader.fieldnames or [])):
+            raise ValueError(
+                f"{imu_raw_csv} missing required columns {sorted(required)}; got {reader.fieldnames}"
+            )
+
+        for row in reader:
+            ts_us = int(str(row["ts_us"]).strip())
+            
+            # Apply time offset and skip
+            if skip_before_us > 0 and ts_us < skip_before_us:
+                continue
+            ts_us += time_offset_us
+            
+            sensor = str(row["sensor"]).strip().lower()
+            xyz = (
+                float(str(row["x"]).strip()),
+                float(str(row["y"]).strip()),
+                float(str(row["z"]).strip()),
+            )
+            if ts_us not in pairs:
+                pairs[ts_us] = ImuPair(ts_us=ts_us)
+
+            if sensor == "accel":
+                pairs[ts_us].accel = xyz
+            elif sensor == "gyro":
+                pairs[ts_us].gyro = xyz
+
+    completed = [p for _, p in sorted(pairs.items(), key=lambda kv: kv[0]) if p.accel and p.gyro]
+    return completed
+
+
 def link_or_copy(src: Path, dst: Path, prefer_symlink: bool) -> None:
     dst.parent.mkdir(parents=True, exist_ok=True)
     if dst.exists() or dst.is_symlink():
@@ -183,6 +228,18 @@ def main() -> None:
         action="store_true",
         help="Copy files instead of symlink (default prefers symlink and falls back to copy)",
     )
+    parser.add_argument(
+        "--imu-time-offset-us",
+        type=int,
+        default=0,
+        help="Global IMU timestamp offset in microseconds (use if imu_raw.csv time is ahead/behind frame timestamps)",
+    )
+    parser.add_argument(
+        "--skip-imu-before-us",
+        type=int,
+        default=0,
+        help="Skip IMU samples before this timestamp (microseconds), useful if device was moving at start",
+    )
 
     args = parser.parse_args()
 
@@ -229,7 +286,11 @@ def main() -> None:
     rgb_pairs.sort(key=lambda x: x[0])
     rgbd_pairs.sort(key=lambda x: x[0])
 
-    imu_pairs = load_imu_raw_pairs(imu_raw_csv)
+    imu_pairs = load_imu_raw_pairs_with_filters(
+        imu_raw_csv,
+        time_offset_us=args.imu_time_offset_us,
+        skip_before_us=args.skip_imu_before_us,
+    )
 
     if not rgb_pairs:
         raise RuntimeError("No RGB frames matched imu.csv frame_index -> ref_ts_us")
@@ -250,6 +311,8 @@ def main() -> None:
     with report.open("w", encoding="utf-8", newline="\n") as f:
         f.write(f"data_root: {data_root}\n")
         f.write(f"sequence_name: {args.sequence_name}\n")
+        f.write(f"imu_time_offset_us: {args.imu_time_offset_us}\n")
+        f.write(f"skip_imu_before_us: {args.skip_imu_before_us}\n")
         f.write(f"rgb_frames_used: {len(rgb_pairs)}\n")
         f.write(f"rgbd_pairs_used: {len(rgbd_pairs)}\n")
         f.write(f"imu_samples_used: {len(imu_pairs)}\n")
